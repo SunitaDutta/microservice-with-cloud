@@ -1,0 +1,170 @@
+ ##Microservices with spring cloud
+ 
+ configserver is for centralized configuration
+ 
+   Limit-service  --->  spring-cloud-config-server  ---> GIT Repo
+ 
+ 1. create one spring project using spring initiazer : limit-service
+     in pom.xml 
+	   - web
+	   - dev tool
+	   - actuator
+	   - config client
+	   
+	   in application.properties - we need to config where spring cloud is running
+	   spring.config.import=optional:configserver:http://localhost:8888  - when configserver will be available, limit-service will start talk to configserver
+	   
+  2. create one POJO class i.e Limits
+  
+			 public class Limits {
+
+				private int minimum;
+				private int maximum;
+				
+				//Getter setter constructor
+
+			}
+  
+  3. create one controller class i.e LimitController.java	 
+
+       @RestController
+	   public class LimitController {
+	
+			@GetMapping("/limits")
+			public Limits retrieveLimits() {
+				
+				//using hardcoded value
+				return new Limits(1,1000);
+				
+			} 
+	
+	
+ 4. in application.properties 
+      limit-service.minimum=2
+	  limit-service.maximum=5000
+	  
+	  
+ 5. Now, we need to pick up these value from application.properties file
+
+    we need to create one class i.e Configuration.java, 
+	now we need to add one annotation to make sure that value of application.properties file is mapped to Configuration.java
+    
+	@ConfigurationProperties("limit-service")  ---> it will mapped to limit-service.minimum and limit-service.maximum
+     public class Configuration {
+
+			private int minimum;
+			private int maximum;	
+			
+			//getter setter
+			
+	  }		
+	  
+	  
+  6. Now, Controller class will take the value from application.properties file through Configuration.java class
+	  
+	  
+	  @RestController
+	  public class LimitController {
+	
+		@Autowired
+		private Configuration config;
+		
+		@GetMapping("/limits")
+		public Limits retrieveLimits() {
+			
+			//taking value from application.properties file
+			return new Limits(config.getMinimum(),config.getMaximum());
+		}
+	  
+	  
+  7. Now, we will do the set up spring cloud config server
+     
+     - create another spring project
+         -in pom.xml 
+           - dev tool
+		   - config server - central management for configuration via Git, svn
+		   
+	 in application.properties file
+	   server.application.name=spring-cloud-config-server
+       server.port=8888  ---> standard port
+	   
+ 
+  8. Make one directory/folder in D drive and open git bash 
+     
+      run the command - git init 
+ 
+     in that folder, create properties file
+    
+     limit-service.properties	
+	   limit-service.minimum=5
+	   limit-service.maximum=9000
+	   
+	   
+	   
+  9. in  spring cloud config server project , we need to connect it with Git
+
+      in application.properties
+      
+     spring.cloud.config.server.git.uri=file:///C:/Users/home/yourproject/gitRepo	  
+	   
+	   
+	 Last, we have to enable Config server, so need to use annotation
+
+		@EnableConfigServer
+		@SpringBootApplication
+		public class SpringCloudConfigServerApplication {
+		
+		}
+		
+  10. we r done , now hit the api - http://localhost:8888/limit-service/default
+
+
+  11. in limit-service project, 
+        
+       in application.properties file
+	   server.application.name=limit-service  --> when this project will run, it will use this application name as key or id for talk to the configserver and get the configuration back
+	   
+	   One thing we saw , the value in application.properties file have less proirity  to compare with git repo
+	 
+	 
+  12. Configuring Profiles for Limits Service
+    
+     - in git Repo, create two properties files
+    
+     limit-service-dev.properties	
+	   limit-service.minimum=5
+	   limit-service.maximum=9000
+	   
+	   limit-service-prod.properties	
+		   limit-service.minimum=10
+		   limit-service.maximum=10000
+	   
+		   
+	  now hit the api - http://localhost:8888/limit-service/dev or http://localhost:8888/limit-service/prod
+	  
+	  
+	13. when we want to support multiple environments , we will go for profiling
+
+       in limit-service project - application.properties file
+
+      spring.profiles.active=dev
+      spring.cloud.config.profile=dev	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
